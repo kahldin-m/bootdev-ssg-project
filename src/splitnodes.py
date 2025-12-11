@@ -1,4 +1,5 @@
 from textnode import TextNode, TextType
+from inline_markdown import extract_markdown_images, extract_markdown_links
 
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
     new_nodes = []
@@ -25,6 +26,16 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
             
     return new_nodes
 
+def split_nodes_image(old_nodes):
+    new_nodes = []
+    for node in old_nodes:
+        new_nodes.extend(extract_markdown_images(node))
+    return new_nodes
+
+
+
+
+
 ## Example usage:
 # node = TextNode("This is a plain delimiter-less node", TextType.TEXT)
 # node2 = TextNode("**This is a bold text only node**", TextType.BOLD)
@@ -34,3 +45,9 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
 
 # for node in new_nodes:
 #     print(f"TextNode({node.text}, {node.text_type})")
+if __name__ == "__main__":
+    node = TextNode(
+        "This is text with a link [to boot dev](https://www.boot.dev) and [to youtube](https://www.youtube.com/@bootdotdev)",
+        TextType.TEXT,
+    )
+    print(split_nodes_image([node]))
