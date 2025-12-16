@@ -37,59 +37,72 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
 def split_nodes_image(old_nodes):
     new_nodes = []
     for node in old_nodes:
-        image_node = extract_markdown_images(node.text)
-        if len(image_node) == 0:
-            new_nodes.append(node)
-        image_alt = image_node[0][0]
-        image_link = image_node[0][1]
-        fatty = node.text.split(f"![{image_alt}]({image_link})", 1)
-        if len(fatty) == 1:
-            new_nodes.extend(image_alt, image_link)
+        current_text = node.text
+        images = extract_markdown_images(current_text)
+        if len(images) == 0:
+            if node.text != "":
+                new_nodes.append(node)
             continue
-        else:
-            new_nodes.extend([image_alt, image_link])
+        for image_alt, image_link in images:
+            # print(f"THIS IS IMAGE: {image_alt} <<>> {image_link}")    # DEBUG print
+            before, after = current_text.split(f"![{image_alt}]({image_link})", 1)
+            # print(f"THIS IS FATTY: {before} <<>> {after}")    # DEBUG print
+            if before != "":
+                new_nodes.append(TextNode(before, TextType.TEXT))
+            new_nodes.append(TextNode(image_alt, TextType.IMAGE, image_link))
+            current_text = after
+
+        if current_text != "":
+            new_nodes.append(TextNode(current_text, TextType.TEXT))
             
     return new_nodes
-
 
 def split_nodes_link(old_nodes):
     new_nodes = []
     for node in old_nodes:
-        image_node = extract_markdown_links(node.text)
-        if len(image_node) == 0:
-            new_nodes.append(node)
-        image_alt = image_node[0][0]
-        image_link = image_node[0][1]
-        fatty = node.text.split(f"[{image_alt}]({image_link})", 1)
-        if len(fatty) == 1:
-            new_nodes.extend(image_alt, image_link)
+        current_text = node.text
+        links = extract_markdown_links(current_text)
+        if len(links) == 0:
+            if node.text != "":
+                new_nodes.append(node)
             continue
-        else:
-            new_nodes.extend([image_alt, image_link])
-            
+        for link_anchor, link_url in links:
+            before, after = current_text.split(f"[{link_anchor}]({link_url})", 1)
+            if before != "":
+                new_nodes.append(TextNode(before, TextType.TEXT))
+            new_nodes.append(TextNode(link_anchor, TextType.LINK, link_url))
+            current_text = after
+        
+        if current_text != "":
+            new_nodes.append(TextNode(current_text, TextType.TEXT))
+
     return new_nodes
-
-
 
 # for node in new_nodes:
 #     print(f"TextNode({node.text}, {node.text_type})")
 if __name__ == "__main__":
     node = TextNode(
-        "This is text with an image link ![boots png](https://www.boot.dev/profile/image/boots_smirk) and a link [to youtube](https://www.youtube.com/@bootdotdev)",
+        "This is text with an image link ![boots png](https://www.boot.dev/profile/image/boots_smirk) and a link [to youtube](https://www.youtube.com/@bootdotdev) and another image ![image text](https://www.fakeimagesite.com/my_image)",
         TextType.TEXT,
     )
-    print(split_nodes_image([node]))
+    split_node = split_nodes_image([node])
+    print("Splitting images . . .")
+    for n in split_node:
+        print(n)
 
     node2 = TextNode(
-        "This is text with an image link ![boots png](https://www.boot.dev/profile/image/boots_smirk) and a link [to youtube](https://www.youtube.com/@bootdotdev)",
+        "This is text with a link [to boot dev](https://www.boot.dev) and [to youtube](https://www.youtube.com/@bootdotdev) and an ![random image](https://cdn.Ppixabay.com/photo/2016/09/16/14/10/mask-1674106_1280.jpg)",
         TextType.TEXT,
     )
-    print(split_nodes_link([node2]))
-
-    node3 = TextNode(
-        "This is a text node with __italic block__ see how it shines.",
-        TextType.TEXT
-    )
-    split_del = split_nodes_delimiter([node3], "__", TextType.ITALIC)
-    for n in split_del:
+    split_node2 = split_nodes_link([node2])
+    print("Splitting links . . .")
+    for n in split_node2:
         print(n)
+
+    # node3 = TextNode(
+    #     "This is a text node with __italic block__ see how it shines.",
+    #     TextType.TEXT
+    # )
+    # split_del = split_nodes_delimiter([node3], "__", TextType.ITALIC)
+    # for n in split_del:
+    #     print(n)

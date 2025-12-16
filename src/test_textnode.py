@@ -32,7 +32,7 @@ class TestTextNode(unittest.TestCase):
 
     def test_repr(self):
         node = TextNode("Sample", TextType.ITALIC)
-        expected_repr = "TextNode(Sample, italic, None)"
+        expected_repr = "TextNode('Sample', TextType.ITALIC)"
         self.assertEqual(repr(node), expected_repr)
 
 class TestTextNodeToHTMLNode(unittest.TestCase):
