@@ -28,7 +28,7 @@ class TestTextNode(unittest.TestCase):
         for text_type in TextType:
             node = TextNode("Sample", text_type)
             self.assertEqual(node.text_type, text_type)
-            print(f"Created TextNode with type: {text_type}")
+            # print(f"Created TextNode with type: {text_type}")
 
     def test_repr(self):
         node = TextNode("Sample", TextType.ITALIC)

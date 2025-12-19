@@ -89,7 +89,7 @@ class TestParentNode(unittest.TestCase):
             node.to_html(),
             "<p><b>Bold text</b>Normal text<i>Itallic text</i>Normal text</p>",
         )
-        print(repr(node))
+        # print(repr(node))
 
     def test_headings(self):
         node = ParentNode(
@@ -106,7 +106,7 @@ class TestParentNode(unittest.TestCase):
             node.to_html(),
             "<h2><b>Bold text</b>Normal text<i>Itallic text</i>Normal text</h2>",
         )
-        print(repr(node))
+        # print(repr(node))
 
 if __name__ == "__main__":
     unittest.main()

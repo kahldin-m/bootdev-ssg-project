@@ -2,7 +2,8 @@ import unittest
 
 from textnode import TextNode, TextType
 from inline_markdown import (extract_markdown_images, extract_markdown_links,
-                             split_nodes_delimiter, split_nodes_image, split_nodes_link)
+                             split_nodes_delimiter, split_nodes_image, split_nodes_link,
+                             text_to_textnodes)
 
 
 class TestInlineMarkdown(unittest.TestCase):
@@ -40,7 +41,7 @@ class TestInlineMarkdown(unittest.TestCase):
         self.assertListEqual([("alt text", "https://i.imgur.com/aKaOqIh.gif")], matches)
 
 
-class TestSplitNodeDelimiter(unittest.TestCase):
+class TestSplitNodeFunctions(unittest.TestCase):
     def test_no_delimiter(self):
         node = TextNode("This is a plain text node", TextType.TEXT)
         result = split_nodes_delimiter([node], '`', TextType.CODE)
@@ -67,6 +68,19 @@ class TestSplitNodeDelimiter(unittest.TestCase):
             TextNode(" block", TextType.TEXT),
         ]
         self.assertEqual(result, expected)
+
+    def test_delim_bold_and_italic(self):
+        node = TextNode("**bold** and _italic_", TextType.TEXT)
+        new_nodes = split_nodes_delimiter([node], "**", TextType.BOLD)
+        new_nodes = split_nodes_delimiter(new_nodes, "_", TextType.ITALIC)
+        self.assertEqual(
+            [
+                TextNode("bold", TextType.BOLD),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("italic", TextType.ITALIC),
+            ],
+            new_nodes,
+        )
 
     def test_multiple_delimiters(self):
         node = TextNode("This is a `code` block with multiple `code` segments", TextType.TEXT)
@@ -248,7 +262,6 @@ class TestSplitNodeDelimiter(unittest.TestCase):
             new_nodes
         )
 
-
     def test_split_link_empty_node(self):
         node = TextNode(
             "",
@@ -260,6 +273,69 @@ class TestSplitNodeDelimiter(unittest.TestCase):
 
             ],
             new_nodes
+        )
+
+
+class TestTextToTextNodes(unittest.TestCase):
+
+    def test_text_to_textnode(self):
+        test_text = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+        result_nodes = text_to_textnodes(test_text)
+        self.assertListEqual(
+            [
+                TextNode('This is ', TextType.TEXT),
+                TextNode('text', TextType.BOLD),
+                TextNode(' with an ', TextType.TEXT),
+                TextNode('italic', TextType.ITALIC),
+                TextNode(' word and a ', TextType.TEXT),
+                TextNode('code block', TextType.CODE),
+                TextNode(' and an ', TextType.TEXT),
+                TextNode('obi wan image', TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"),
+                TextNode(' and a ', TextType.TEXT),
+                TextNode('link', TextType.LINK, "https://boot.dev") ,
+            ],
+            result_nodes
+        )
+
+    def test_ttt_format_start(self):
+        test_text = "**Bold Title** _text with an italic body_ and a lovely simple ending link [anchor](https://www.alabamibuckstep.com)"
+        result_nodes = text_to_textnodes(test_text)
+        self.assertListEqual(
+            [
+                TextNode('Bold Title', TextType.BOLD),
+                TextNode(' ', TextType.TEXT),
+                TextNode('text with an italic body', TextType.ITALIC),
+                TextNode(' and a lovely simple ending link ', TextType.TEXT),
+                TextNode('anchor', TextType.LINK, 'https://www.alabamibuckstep.com'),
+            ],
+            result_nodes
+        )
+
+    def test_ttt_format_end(self):
+        test_text = "This text contains an image ![marching photo](https://www.alabamibuckstep.com/marchingparade.jpg) _marching photo 2007 parade_"
+        result_nodes = text_to_textnodes(test_text)
+        self.assertListEqual(
+            [
+                TextNode('This text contains an image ', TextType.TEXT),
+                TextNode('marching photo', TextType.IMAGE, 'https://www.alabamibuckstep.com/marchingparade.jpg'),
+                TextNode(' ', TextType.TEXT),
+                TextNode('marching photo 2007 parade', TextType.ITALIC),
+            ],
+            result_nodes
+        )
+
+    def test_ttt_all_urls(self):
+        test_text = "[youtube link](https://www.youtube.com)![image](www.image.com)`random code block lol`[image site](www.alinktoimagesite.net/with-a-fun-url) and some text at the end"
+        result_nodes = text_to_textnodes(test_text)
+        self.assertListEqual(
+            [
+                TextNode('youtube link', TextType.LINK, 'https://www.youtube.com'),
+                TextNode('image', TextType.IMAGE, 'www.image.com'),
+                TextNode('random code block lol', TextType.CODE),
+                TextNode('image site', TextType.LINK, 'www.alinktoimagesite.net/with-a-fun-url'),
+                TextNode(' and some text at the end', TextType.TEXT),
+            ],
+            result_nodes
         )
 
 if __name__ == "__main__":

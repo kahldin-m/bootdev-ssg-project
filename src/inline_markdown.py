@@ -13,22 +13,24 @@ def extract_markdown_links(text):
 
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
     new_nodes = []
-    for node in old_nodes:
-        if node.text_type != TextType.TEXT:
-            new_nodes.append(node)
+    for old_node in old_nodes:
+        if old_node.text_type != TextType.TEXT:
+            new_nodes.append(old_node)
+            continue
         else:
-            fatty = node.text.split(delimiter)
+            fatty = old_node.text.split(delimiter)
             if len(fatty) == 1:
                 # print("NO DELIMITER FOUND, KEEPING AS-IS: ", repr(node.text))  # DEBUG print
-                new_nodes.append(node)
+                new_nodes.append(old_node)
                 continue
-
             if len(fatty) % 2 == 0:
                 # print("BROKEN MARKDOWN IN NODE: ", repr(node.text))   # DEBUG print
                 raise Exception("Invalid Markdown: missing delimiter")
             
             # print("SPLITTING NODE: ", repr(node.text), "->", fatty)   # DEBUG print
             for i, chunk in enumerate(fatty):
+                if chunk == "":
+                    continue
                 if i % 2 == 1:
                     new_nodes.append(TextNode(chunk, text_type))
                 else:
@@ -90,10 +92,26 @@ def split_nodes_link(old_nodes):
 
 
 def text_to_textnodes(text):
-    pass
+    the_node = [TextNode(text, TextType.TEXT)]
+    delimiter_types = [
+        ("**", TextType.BOLD), 
+        ("_", TextType.ITALIC), 
+        ("`", TextType.CODE)
+    ]
+    for delimiter, tt in delimiter_types:
+        the_node = split_nodes_delimiter(the_node, delimiter, tt)
+    the_node = split_nodes_image(the_node)
+    the_node = split_nodes_link(the_node)
+    return the_node
 
 ## MANUAL TESTS
-# if __name__ == "__main__":
+if __name__ == "__main__":
+    node = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+    result = text_to_textnodes(node)
+    for line in result:
+        print(line)
+
+
 #     # text = sys.argv[1] if sys.argv[1] else "No text file provided"
 #     text_img = "This is text with a ![rick roll](https://i.imgur.com/aKaOqIh.gif) and ![obi wan](https://i.imgur.com/fJRm4Vk.jpeg"
 
