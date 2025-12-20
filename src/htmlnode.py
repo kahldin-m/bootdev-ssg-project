@@ -1,15 +1,19 @@
+### HTMLNode for Static Site Generator
+
 class HTMLNode(object):
     def __init__(self, tag=None, value=None, children=None, props=None):
-        # A striong representing the valuie of the HTML tag name (e.g. "p", "a", "h1", etc.)
+        # A string representing the value of the HTML tag name (e.g. "p", "a", "h1", etc.)
         self.tag = tag
 
         # A string representing the value of the HTML tag (e.g. the text inside a paragraph)
         self.value = value
 
-        # A list of child HTMLNode object represnting children of this node
+        # A list of child HTMLNode object representing children of this node
+        # e.g. parent = ParentNode("div", [child1, child2])
         self.children = children
 
-        # A dictionairy of key-value pairs representing the attributes of the HTML tag. For example, a link (<a> tag) might have {"href": "https://www.google.com"}
+        # A dictionary of key-value pairs representing the attributes of the HTML tag.
+        # For example, a link (<a> tag) might have {"href": "https://www.google.com"}
         self.props = props
 
     def to_html(self):
@@ -56,7 +60,7 @@ class ParentNode(HTMLNode):  # A Child of HTMLNode representing nodes with child
         if self.tag is None:
             raise ValueError("Invalid HTML: no tag")
         if self.children is None:
-            raise ValueError("Invalid HTMLL no children")
+            raise ValueError("Invalid HTML no children")
         children_html = ""
         # Otherwise, return a string representing the HTML tag of the node and its children.
         for child in self.children:
@@ -64,4 +68,13 @@ class ParentNode(HTMLNode):  # A Child of HTMLNode representing nodes with child
         return f"<{self.tag}{self.props_to_html()}>{children_html}</{self.tag}>"
     
     def __repr__(self):
-        return f"ParentNote({self.tag}, children: {self.children}, {self.props})"
+        return f"ParentNode({self.tag}, children: {self.children}, {self.props})"
+
+
+### MANUAL TEST
+# if __name__ == "__main__":
+
+#     child1 = LeafNode("p", "First paragraph")
+#     child2 = LeafNode("p", "Second paragraph")
+#     parent = ParentNode("div", [child1, child2])  # children is a list!
+#     print(parent.to_html())

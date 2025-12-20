@@ -129,35 +129,16 @@ There are spaces in the paragraph below this one
 
 
     def test_btbt_coding_blocks(self):
-        md = """
-```A coding block```
-
-```
-A multi-line
-coding block
-```
-
-```An incorrect coding block````
-
-``````
-
-```
-```
-"""
-        blocks = markdown_to_blocks(md)
-        types = []
-        for block in blocks:
-            types.append(block_to_block_type(block))
-        self.assertListEqual(
-            [
-                BlockType.CODE,
-                BlockType.CODE,
-                BlockType.PARAGRAPH,
-                BlockType.PARAGRAPH,
-                BlockType.CODE,
-            ],
-            types
-        )
+        block = "```A coding block```"
+        self.assertEqual(block_to_block_type(block), BlockType.CODE)
+        block = "```\nA multi-line\ncoding block\n```"
+        self.assertEqual(block_to_block_type(block), BlockType.CODE)
+        block = "```An incorrect coding block````"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+        block = "``````"
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
+        block = "```\n```"
+        self.assertEqual(block_to_block_type(block), BlockType.CODE)
 
     def test_multi_line_blocks(self):
         md = """
@@ -199,10 +180,10 @@ reigns
             [
                 BlockType.QUOTE,
                 BlockType.PARAGRAPH,
-                BlockType.UNORDERED_LIST,
+                BlockType.ULIST,
                 BlockType.PARAGRAPH,
                 BlockType.PARAGRAPH,
-                BlockType.ORDERED_LIST,
+                BlockType.OLIST,
                 BlockType.PARAGRAPH,
                 BlockType.PARAGRAPH,
             ],
@@ -210,34 +191,18 @@ reigns
         )
 
     def test_one_line_lists(self):
-        md = """
-> A quote
-
-- Unordered
-
-1. Ordered
-
->  
-
--  
-
-1.  
-"""
-        blocks = markdown_to_blocks(md)
-        types = []
-        for block in blocks:
-            types.append(block_to_block_type(block))
-        self.assertListEqual(
-            [
-                BlockType.QUOTE,
-                BlockType.UNORDERED_LIST,
-                BlockType.ORDERED_LIST,
-                BlockType.QUOTE,
-                BlockType.PARAGRAPH,
-                BlockType.PARAGRAPH,
-            ],
-            types
-        )
+        block = "> A quote"
+        self.assertEqual(block_to_block_type(block), BlockType.QUOTE)
+        block = "- Unordered"
+        self.assertEqual(block_to_block_type(block), BlockType.ULIST)
+        block = "1. Ordered"
+        self.assertEqual(block_to_block_type(block), BlockType.OLIST)
+        block = ">  "
+        self.assertEqual(block_to_block_type(block), BlockType.QUOTE)
+        block = "-  "
+        self.assertEqual(block_to_block_type(block), BlockType.ULIST)
+        block = "1.  "
+        self.assertEqual(block_to_block_type(block), BlockType.OLIST)
 
 if __name__ == "__main__":
     unittest.main()
