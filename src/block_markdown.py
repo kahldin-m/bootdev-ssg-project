@@ -1,8 +1,10 @@
 ## Helpers for parsing text into block markdown
 import re
+
 from enum import Enum
-from textnode import TextNode, text_node_to_html_node, TextType
-from htmlnode import HTMLNode, ParentNode, LeafNode
+from htmlnode import ParentNode, LeafNode
+from textnode import TextNode, TextType, text_node_to_html_node
+
 import inline_markdown as imd
 
 
@@ -16,51 +18,65 @@ class BlockType(Enum):
 
 
 def markdown_to_blocks(markdown):
-    prep_md = [s.strip() for s in markdown.split('\n\n')]
-    block_strings = []
-    for line in prep_md:
-        if line != "":
-            block_strings.append(line)
+    ## Gotta normalize whitespace to avoice lines with accidental space/tabs
+    ## from counting and messing up formatting
+    normalized_lines = []
+    for line in markdown.split("\n"):
+        if line.strip() == "":
+            normalized_lines.append("")
+        else:
+            normalized_lines.append(line)
 
-    return block_strings
+    normalized = "\n".join(normalized_lines)
+
+    ## Now split into blocks
+    blocks = [b.strip() for b in normalized.split("\n\n")]
+
+    ## Filter out empty blocks
+    return [b for b in blocks if b != ""]
+    # prep_md = [s.strip() for s in markdown.split('\n\n')]
+    # block_strings = []
+    # for line in prep_md:
+    #     if line != "":
+    #         block_strings.append(line)
+
+    # return block_strings
 
 def block_to_block_type(block):
     smash = block.split("\n")
-    block_type = BlockType.PARAGRAPH
-    if len(smash) > 1:
-        if smash[0] == ("```") and smash[-1] == ("```"):
-            return BlockType.CODE
-        if smash[0].startswith(">"):
-            for line in smash:
-                if not line.startswith(">"):
-                    return BlockType.PARAGRAPH
-            return BlockType.QUOTE
-        if smash[0].startswith("- "):
-            for line in smash:
-                if not line.startswith("- "):
-                    return BlockType.PARAGRAPH
-            return BlockType.ULIST
-        if smash[0].startswith("1. "):
-            i = 1
-            for line in smash:
-                if not line.startswith(f"{i}. "):
-                    return BlockType.PARAGRAPH
-                i += 1
-            return BlockType.OLIST
-
-    else:
-        if re.findall(r"^#{1,6}\s", block):
+    if re.findall(r"^#{1,6}\s", block):
             return BlockType.HEADING
-        if len(block) > 3 and block[0:3] == ("```"):
-            if re.findall(r"(?<!`)`{3}$", block):
-                return BlockType.CODE
-        if block.startswith(">"):
-            return BlockType.QUOTE
-        if block.startswith("- "):
-            return BlockType.ULIST
-        if block.startswith("1. "):
-            return BlockType.OLIST
-    return block_type
+    if len(smash) > 1 and smash[0].startswith("```") and smash[-1].startswith("```"):
+        return BlockType.CODE
+    if smash[0].startswith(">"):
+        for line in smash:
+            if not line.startswith(">"):
+                return BlockType.PARAGRAPH
+        return BlockType.QUOTE
+    if smash[0].startswith("- "):
+        for line in smash:
+            if not line.startswith("- "):
+                return BlockType.PARAGRAPH
+        return BlockType.ULIST
+    if smash[0].startswith("1. "):
+        i = 1
+        for line in smash:
+            if not line.startswith(f"{i}. "):
+                return BlockType.PARAGRAPH
+            i += 1
+        return BlockType.OLIST
+    return BlockType.PARAGRAPH
+    # else:
+    #     # if len(block) > 3 and block[0:3] == ("```"):
+    #     #     if re.findall(r"(?<!`)`{3}$", block):
+    #     #         return BlockType.CODE
+    #     if block.startswith(">"):
+    #         return BlockType.QUOTE
+    #     if block.startswith("- "):
+    #         return BlockType.ULIST
+    #     if block.startswith("1. "):
+    #         return BlockType.OLIST
+    
 
 
 ##  Takes a full markdown document and converts it into a single parent HTMLNode
@@ -68,43 +84,52 @@ def block_to_block_type(block):
 ##      the nested elements
 def markdown_to_html_node(markdown):
     div_node = ParentNode("div", [], None)
-    # Split md into blocks
     blocks = markdown_to_blocks(markdown)
     for block in blocks:
-        # Determing block type
-        typed_block = block_to_block_type(block)
-        if typed_block == BlockType.HEADING:
-            hashes = 0
-            for hash in block:
-                if hash == "#":
-                    hashes += 1
-                else:
-                    break
-            clean_text = block.strip("#")
-            new_block_children = text_to_children(clean_text.strip())
-            div_node.children.append(ParentNode(f"h{hashes}", new_block_children, None))
-        elif typed_block == BlockType.PARAGRAPH:
-            new_block_children = text_to_children(block)
-            div_node.children.append(ParentNode("p", new_block_children, None))
-        elif typed_block == BlockType.CODE:
-            clean_text = block.strip("```")
-            clean_text_two = clean_text.rstrip("```")
-            code_node = text_node_to_html_node(TextNode(clean_text_two.strip(), TextType.CODE))
-            div_node.children.append(ParentNode("pre", [code_node]))
-        elif typed_block == BlockType.QUOTE:
-            clean_text = block.lstrip(">")
-            new_block_children = text_to_children(clean_text)
-            div_node.children.append(ParentNode("blockquote", new_block_children, None))
-        elif typed_block == BlockType.ULIST:
-            clean_text = block.lstrip("-")
-            new_block_children = text_to_children(clean_text.strip())
-            div_node.children.append(ParentNode("ul", new_block_children, None))
-        elif typed_block == BlockType.OLIST:
-            clean_text = block.lstrip("0123456789.")
-            new_block_children = text_to_children(clean_text.strip())
-            div_node.children.append(ParentNode("ol", new_block_children, None))
-        else:
-            raise Exception("Duh, something went wrong.")
+        try:
+            # Determing block type
+            typed_block = block_to_block_type(block)
+            if typed_block == BlockType.HEADING:
+                hashes = 0
+                for hasher in block:
+                    if hasher == "#":
+                        hashes += 1
+                    else:
+                        break
+                clean_text = block.lstrip("#")
+                new_block_children = text_to_children(clean_text.strip())
+                div_node.children.append(ParentNode(f"h{hashes}", new_block_children, None))
+
+            elif typed_block == BlockType.PARAGRAPH:
+                lines = block.split("\n")
+                cleaned_lines = []
+                for line in lines:
+                    cleaned_lines.append(line.strip())
+                joined = " ".join(cleaned_lines)
+                new_block_children = text_to_children(joined)
+                div_node.children.append(ParentNode("p", new_block_children, None))
+
+            elif typed_block == BlockType.CODE:
+                div_node.children.append(ParentNode("pre", [code_to_html(block)]))
+
+            elif typed_block == BlockType.QUOTE:
+                div_node.children.append(ParentNode("blockquote", quote_to_html(block), None))
+
+            elif typed_block == BlockType.ULIST:
+                div_node.children.append(ParentNode("ul", ulist_to_html(block), None))
+
+            elif typed_block == BlockType.OLIST:
+                div_node.children.append(ParentNode("ol", olist_to_html(block), None))
+            else:
+                raise Exception("Duh, something went wrong.")
+        except Exception:
+            lines = block.split("\n")
+            cleaned_lines = []
+            for line in lines:
+                cleaned_lines.append(line.strip())
+            joined = " ".join(cleaned_lines)
+            text_children = text_node_to_html_node(TextNode(joined, TextType.TEXT))
+            div_node.children.append(ParentNode("p", [text_children], None))
     
 
     # GOAL: Return an HTMLNode for the whole document: a Parent <div> node whose children
@@ -118,55 +143,85 @@ def text_to_children(text):
     # Take a string of text and return a list of
     # HTMLNodes that represent the inline markdown
     # using TextNode -> HTMLNode
-    print(f">>TEXT to Child == {text} <<<")
+    # print(f">>TEXT to Child == {text} <<<")
     new_texts = imd.text_to_textnodes(text)
     text_nodes = []
     for new in new_texts:
         text_nodes.append(text_node_to_html_node(new))
     return text_nodes
 
+def code_to_html(block):
+    block = block[3:-3]
+    if block.startswith("\n"):
+        block = block[1:]
+    lines = block.split("\n")
+    code_text = "\n".join(lines)
+    code_node = text_node_to_html_node(TextNode(code_text, TextType.CODE))
+    return code_node
 
-if __name__ == "__main__":
-## Block to HTMLNode test
-    md = """
-### A heading title
+def quote_to_html(block):
+    lines = block.split("\n")
+    quote_items = []
+    for line in lines:
+        if not line.startswith(">"):
+            raise ValueError(">>Invalid Quote block<<")
+        quote_items.append(line.lstrip(">").strip())
+    result = " ".join(quote_items)
+    return text_to_children(result)
 
-This is **bolded** paragraph
-text in a p
-tag here
+def ulist_to_html(block):
+    lines = block.split("\n")
+    list_items = []
+    for line in lines:
+        children = text_to_children(line[2:])
+        list_items.append(ParentNode("li", children))
+    return list_items
 
-This is another paragraph with _italic_ text
+def olist_to_html(block):
+    lines = block.split("\n")
+    list_items = []
+    for line in lines:
+        children = text_to_children(line[3:])
+        list_items.append(ParentNode("li", children))
+    return list_items
 
-```And a code block```
 
-- unordered
-- list items
-- item third
-
-1. ordered
-2. list
-3. items
-
-Plus two [link](www.site.com) ![img](www.image.com)
-
->And a quote from your future self
-"""
-    node = markdown_to_html_node(md)
-    html = node.to_html()
-    print(html)
-    
-
-## Block Type test
+# if __name__ == "__main__":
 #     md = """
+# # Some heading text in h1
+
+# Normal paragraph
+# with multiple
+# lines
+
+# ## h2 text here
+    
+# - list items
+# - of unordered
+
+# 1. Ordered List
+# 2. Item 2
+
 # > A quote
+# > from some
+# > guy probably
 
-# - Unordered
+# ### h3 text here
 
-# 1. Ordered
+# A normal paragraph here
+
+# ```
+# A block of code
+# with **bold**
+# and _italic_ inside
+# ```
+
+# A paragraph with inline `code` and **bold** and _italic_
+
+# A Paragraph with inline *bold* that is not correct too
 # """
-#     result = markdown_to_blocks(md)
-#     # print(result)
-#     for r in result:
-#         # print(f"\nCHECKING TYPE of block:\n{r}")
-#         print(f">>> {block_to_block_type(r)} <<<")
+
+#     node = markdown_to_html_node(md)
+#     html = node.to_html()
+#     print(html)
     

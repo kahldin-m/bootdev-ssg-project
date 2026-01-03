@@ -24,8 +24,12 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
                 new_nodes.append(old_node)
                 continue
             if len(fatty) % 2 == 0:
+                ## MESSY. DIDN'T KNOW HOW TO HANDLE THIS, BUT WAS CONVINCED TO USE THE EXCEPTION
+                ## RATHER THAN ADD IT AS A PLAIN TEXT SEGMENT
                 # print("BROKEN MARKDOWN IN NODE: ", repr(node.text))   # DEBUG print
                 raise Exception("Invalid Markdown: missing delimiter")
+                # new_nodes.append(old_node)
+                # continue
             
             # print("SPLITTING NODE: ", repr(node.text), "->", fatty)   # DEBUG print
             for i, chunk in enumerate(fatty):
@@ -105,11 +109,11 @@ def text_to_textnodes(text):
     return the_node
 
 ## MANUAL TESTS
-if __name__ == "__main__":
-    node = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
-    result = text_to_textnodes(node)
-    for line in result:
-        print(line)
+# if __name__ == "__main__":
+#     node = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+#     result = text_to_textnodes(node)
+#     for line in result:
+#         print(line)
 
 
 #     # text = sys.argv[1] if sys.argv[1] else "No text file provided"

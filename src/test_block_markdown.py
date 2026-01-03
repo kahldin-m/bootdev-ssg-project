@@ -1,5 +1,10 @@
 import unittest
-from block_markdown import markdown_to_blocks, block_to_block_type, BlockType # type: ignore
+from block_markdown import (
+    markdown_to_blocks,
+    block_to_block_type,
+    BlockType,
+    markdown_to_html_node
+) # type: ignore
 
 
 class TestBlockMardown(unittest.TestCase):
@@ -89,7 +94,7 @@ There are spaces in the paragraph below this one
 
 
     ##  >>>>>>>>>>>>>>>>>>>>
-    ##  testing block_to_block_type
+    ##  block_to_block_type tests
     ##  <<<<<<<<<<<<<<<<<<<<
 
     def test_block_to_block_type(self):
@@ -130,7 +135,7 @@ There are spaces in the paragraph below this one
 
     def test_btbt_coding_blocks(self):
         block = "```A coding block```"
-        self.assertEqual(block_to_block_type(block), BlockType.CODE)
+        self.assertEqual(block_to_block_type(block), BlockType.PARAGRAPH)
         block = "```\nA multi-line\ncoding block\n```"
         self.assertEqual(block_to_block_type(block), BlockType.CODE)
         block = "```An incorrect coding block````"
@@ -203,6 +208,88 @@ reigns
         self.assertEqual(block_to_block_type(block), BlockType.ULIST)
         block = "1.  "
         self.assertEqual(block_to_block_type(block), BlockType.OLIST)
+
+
+    ##  >>>>>>>>>>>>>>>>>>>>
+    ##  markdown_to_html_node tests
+    ##  <<<<<<<<<<<<<<<<<<<<
+
+    def test_paragraphs(self):
+        md = """
+This is **bolded** paragraph
+text in a p
+tag here
+
+This is another paragraph with _italic_ text and `code` here
+
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><p>This is <b>bolded</b> paragraph text in a p tag here</p><p>This is another paragraph with <i>italic</i> text and <code>code</code> here</p></div>",
+        )
+
+    def test_codeblock(self):
+        md = """
+```
+This is text that _should_ remain
+the **same** even with inline stuff
+```
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>",
+        )
+
+    def test_lists(self):
+        md = """
+- An unordered list
+- with items
+- another item
+
+1. An ordered list
+2. with an item
+3. and another
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><ul><li>An unordered list</li><li>with items</li><li>another item</li></ul><ol><li>An ordered list</li><li>with an item</li><li>and another</li></ol></div>",
+        )
+
+    def test_bad_formatting(self):
+        # Expect all paragraphs
+        md = """
+####### Who ordered #7 heading?
+
+```a code block that shouldn't work````
+
+>>Potentially failed blockquote
+
+A paragraph with good `code` but bad *bold*
+
+-Unordered list
+-Failed attempt
+
+1. Ordered
+2.Failure
+
+1. Attempt 2
+3. is no good
+"""
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><p>####### Who ordered #7 heading?</p><p>```a code block that shouldn't work````</p><blockquote>Potentially failed blockquote</blockquote><p>A paragraph with good <code>code</code> but bad *bold*</p><p>-Unordered list -Failed attempt</p><p>1. Ordered 2.Failure</p><p>1. Attempt 2 3. is no good</p></div>",
+        )
 
 if __name__ == "__main__":
     unittest.main()
