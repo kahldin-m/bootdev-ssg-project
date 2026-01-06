@@ -5,15 +5,21 @@ from textnode import TextNode, TextType # type: ignore
 
 def main():
     copy_directory("static", "public")
-    print("Successfully copied from '/static' to '/public'")
+    print("Successfully copied from '/static' to '/public'\n- - - - - - - - - -\n")
     # test_node = TextNode("Hello, World!", TextType.BOLD, "https://www.google.com")
     # print(repr(test_node))
 
 def extract_title(markdown):
+    for line in markdown.split("\n"):
+        if line.startswith("# "):
+            return line[2:].strip()
+    raise Exception("No h1 header line detected!")
+
+def generate_page(from_path, template_path, dest_path):
     pass
 
 def copy_directory(src, dst):
-    debug = True
+    debug = False
     # first check if the directories exist
     if not os.path.exists(dst):
         raise FileNotFoundError(f"ERROR: '{dst}' directory not found!")
