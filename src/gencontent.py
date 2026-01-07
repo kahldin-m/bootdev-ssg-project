@@ -1,7 +1,7 @@
 import os
 
+from pathlib import Path
 from block_markdown import markdown_to_html_node
-
 
 
 def extract_title(markdown):
@@ -10,6 +10,19 @@ def extract_title(markdown):
             return line[2:].strip()
     raise Exception("Title Extraction Failed! No h1 header line detected!")
 
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+    dpc = Path(dir_path_content)
+    ddp = Path(dest_dir_path)
+    for path in dpc.iterdir():
+        dest = ddp / path.name
+        # print(f"content in ./{dpc}: {path}")
+        if path.is_file() and path.suffix == ".md":
+            html_dest = dest.with_suffix(".html")
+            # print(f" * Wants to generate {path} --> {html_dest}")
+            generate_page(path, template_path, html_dest)
+        elif path.is_dir():
+            # print(f" - digging deeper ({path}) ...")
+            generate_pages_recursive(path, template_path, dest)
 
 def generate_page(from_path, template_path, dest_path):
     if not os.path.exists(from_path):
@@ -17,12 +30,12 @@ def generate_page(from_path, template_path, dest_path):
     if not os.path.exists(template_path):
         raise Exception(f"File path to {template_path} does not exist!")
     
-    print(f"Generating page from {from_path} to {dest_path} using {template_path} ...\n")
-    with open(from_path) as f:
+    print(f"Generating page from {from_path} to {dest_path} using {template_path} ...")
+    with open(from_path, "r") as f:
         # Markdown file
         md_content = f.read()
-    with open(template_path) as t:
-        # Template file
+    with open(template_path, "r") as t:
+        # Template file named as what its going to be "hhtml_page"
         html_page = t.read()
     
     # Convert the md_content into an HTML string
@@ -34,12 +47,13 @@ def generate_page(from_path, template_path, dest_path):
 
     # Create any necessary directories if they don't exist
     dir_dest_path = os.path.dirname(dest_path)
-    if dir_dest_path:
-        print(f"Creating destination path: {dir_dest_path} ...\n")
+    if dir_dest_path != "":
+        # print(f"Creating destination path: {dir_dest_path} ...\n")
         os.makedirs(dir_dest_path, exist_ok=True)
 
     # Now write a new full HTML page to a file at dest_path
     with open(dest_path, "w") as index_html:
+        print(f"Writing html_page to {dest_path}\n")
         index_html.write(html_page)
 
-    print(f" *===== Wrote : =====*\n{html_page}\n\n *===== to {dest_path} =====*")
+    # print(f" *===== Wrote : =====*\n{html_page}\n\n *===== to {dest_path} =====*")

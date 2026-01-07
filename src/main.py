@@ -2,14 +2,13 @@ import os
 import shutil
 
 from copystatic import copy_directory # type: ignore
-from gencontent import generate_page # type: ignore
+from gencontent import generate_pages_recursive # type: ignore
 
 
 static_path = "./static"
-public_path = "./public"
-index_path = "./content/index.md"
+content_path = "./content"
 template_path = "./template.html"
-index_dest = "./public/index.html"
+public_path = "./public"
 
 spacer = "\n- - - - - - - - - -\n"
 
@@ -24,7 +23,7 @@ def main():
     copy_directory(static_path, public_path)
     print(f"Successfully copied content of {static_path} to {public_path} !" + spacer)
 
-    generate_page(index_path, template_path, index_dest)
+    generate_pages_recursive(content_path, template_path, public_path)
     print(spacer)
 
 
