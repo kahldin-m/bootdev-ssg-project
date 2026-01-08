@@ -13,13 +13,13 @@ def copy_directory(src, dst):
         full_path = os.path.join(src, item)
         # if item is a file, simply copy
         if os.path.isfile(full_path):
-            print(f" * static/{item} -> public/{item} (file)")
+            print(f" * {src}/{item} -> {dst}/{item} (file)")
             shutil.copy(full_path, dst)
         # if the item is a directory, make a copy of that directory by name, then recurse into
         # it to copy whatever files are inside... does that maek sense?
         elif os.path.isdir(full_path):
             new_dst = os.path.join(dst, item)
-            print(f" * static/{item} -> public/{item} (dir)")
+            print(f" * {src}/{item} -> {dst}/{item} (dir)")
             copy_directory(full_path, new_dst)
 
         else:

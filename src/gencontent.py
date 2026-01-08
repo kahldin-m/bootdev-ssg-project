@@ -10,7 +10,7 @@ def extract_title(markdown):
             return line[2:].strip()
     raise Exception("Title Extraction Failed! No h1 header line detected!")
 
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, base_path):
     dpc = Path(dir_path_content)
     ddp = Path(dest_dir_path)
     for path in dpc.iterdir():
@@ -19,12 +19,12 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
         if path.is_file() and path.suffix == ".md":
             html_dest = dest.with_suffix(".html")
             # print(f" * Wants to generate {path} --> {html_dest}")
-            generate_page(path, template_path, html_dest)
+            generate_page(path, template_path, html_dest, base_path)
         elif path.is_dir():
             # print(f" - digging deeper ({path}) ...")
-            generate_pages_recursive(path, template_path, dest)
+            generate_pages_recursive(path, template_path, dest, base_path)
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, base_path):
     if not os.path.exists(from_path):
         raise Exception(f"File path to {from_path} does not exist!")
     if not os.path.exists(template_path):
@@ -44,6 +44,8 @@ def generate_page(from_path, template_path, dest_path):
     # Replace the placeholder title and content with our own
     html_page = html_page.replace("{{ Title }}", title)
     html_page = html_page.replace("{{ Content }}", main_content)
+    html_page = html_page.replace('href="/', 'href="' + base_path)
+    html_page = html_page.replace('src="/', 'src="' + base_path)
 
     # Create any necessary directories if they don't exist
     dir_dest_path = os.path.dirname(dest_path)
